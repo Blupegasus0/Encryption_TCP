@@ -1,1 +1,1 @@
-/home/obsidian/Projects/rust/big_encryption/target/debug/big_encryption: /home/obsidian/Projects/rust/big_encryption/src/main.rs
+/home/obsidian/Projects/rust/encryption_tcp/encryption_tcp/target/debug/big_encryption: /home/obsidian/Projects/rust/encryption_tcp/encryption_tcp/src/main.rs

@@ -27,7 +27,6 @@ fn main() -> Result<(), anyhow::Error> {
     // 
 
 
-    encrypt_large_file(&file_path, &encrypted_file_path, &key, &nonce,)?;
     decrypt_large_file(&encrypted_file_path, &output_file_path, &key, &nonce,)?;
 
 
