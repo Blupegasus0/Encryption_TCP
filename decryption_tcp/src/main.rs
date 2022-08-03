@@ -33,55 +33,6 @@ fn main() -> Result<(), anyhow::Error> {
     Ok(())
 }
 
-fn encrypt_large_file(
-    source_file_path: &str,
-    output_path: &str,
-    key: &[u8; 32],
-    nonce: &[u8; 19],
-) -> Result<(), anyhow::Error> {
-
-    // Connect to the stream
-    let mut stream = TcpStream::connect("localhost:8081").unwrap();
-
-    // Create message as bytes
-    let msg = b"short message";
-
-    //  Write message to the stream
-    stream.write(msg).unwrap();
-
-    
-    // ENCRYPTION
-    let aead = XChaCha20Poly1305::new(key.as_ref().into());
-    let mut stream_encryptor = stream::EncryptorBE32::from_aead(aead, nonce.as_ref().into());
-
-    const BUFFER_SIZE: usize = 1024;
-    let mut buffer = [0u8; BUFFER_SIZE];
-
-    let mut source_file = File::open(source_file_path)?;
-    let mut output_file = File::create(output_path)?;
-
-    loop {
-        let read_count = source_file.read(&mut buffer)?;
-
-        if read_count == BUFFER_SIZE {
-            let ciphertext = stream_encryptor
-                .encrypt_next(buffer.as_slice())
-                .map_err(|e| anyhow!("Encryping large file: {}", e))?;
-            
-            output_file.write(&ciphertext)?;
-        } else {
-            let ciphertext = stream_encryptor
-                .encrypt_last(&buffer[..read_count])
-                .map_err(|e| anyhow!("Encryping large file: {}", e))?;
-            
-            output_file.write(&ciphertext)?;
-            break;
-        }
-    }
-
-    Ok(())
-}
-
 
 fn decrypt_large_file(
     encrypted_file_path: &str,
