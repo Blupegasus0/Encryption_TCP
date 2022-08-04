@@ -14,10 +14,10 @@ fn main() -> Result<(), anyhow::Error> {
     let mut key = [0u8; 32];
     let mut nonce = [0u8; 19];
 
-    
+    // USES EMPTY KEY/NONCE UNSECURE
 
-    OsRng.fill_bytes(&mut key);
-    OsRng.fill_bytes(&mut nonce);
+    //OsRng.fill_bytes(&mut key);
+    //OsRng.fill_bytes(&mut nonce);
 
     let file_path = "test.txt";
     let encrypted_file_path = "test.encrypt";
@@ -44,10 +44,7 @@ fn encrypt_large_file(
     let mut stream = TcpStream::connect("localhost:8081").unwrap();
 
     // Create message as bytes
-    let msg = b"short message";
-
-    //  Write message to the stream
-    stream.write(msg).unwrap();
+    //let msg = b"short message";
 
     
     // ENCRYPTION
@@ -58,23 +55,33 @@ fn encrypt_large_file(
     let mut buffer = [0u8; BUFFER_SIZE];
 
     let mut source_file = File::open(source_file_path)?;
-    let mut output_file = File::create(output_path)?;
+    //let mut output_file = File::create(output_path)?;
 
     loop {
         let read_count = source_file.read(&mut buffer)?;
+
+        println!("{}", read_count);
 
         if read_count == BUFFER_SIZE {
             let ciphertext = stream_encryptor
                 .encrypt_next(buffer.as_slice())
                 .map_err(|e| anyhow!("Encryping large file: {}", e))?;
             
-            output_file.write(&ciphertext)?;
+            //output_file.write(&ciphertext)?;
+    
+            //  Write message to the stream
+            stream.write(&ciphertext).unwrap();
+
         } else {
             let ciphertext = stream_encryptor
                 .encrypt_last(&buffer[..read_count])
                 .map_err(|e| anyhow!("Encryping large file: {}", e))?;
             
-            output_file.write(&ciphertext)?;
+            //output_file.write(&ciphertext)?;
+
+            //  Write message to the stream
+            stream.write(&ciphertext).unwrap();
+
             break;
         }
     }
