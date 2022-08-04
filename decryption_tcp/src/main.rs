@@ -21,38 +21,20 @@ fn main() -> Result<(), anyhow::Error> {
     //OsRng.fill_bytes(&mut key);
     //OsRng.fill_bytes(&mut nonce);
 
-    let file_path = "test.txt";
-    let encrypted_file_path = "test.encrypt";
     let output_file_path = "test.decrypt";
 
-
-    decrypt_large_file(&encrypted_file_path, &output_file_path, &key, &nonce,)?;
-    //loops_twice();
-
+    decrypt_large_file(&output_file_path, &key, &nonce,)?;
 
     Ok(())
 }
 
-fn loops_twice() {
-    let listener = TcpListener::bind("localhost:8081").unwrap();
-
-    println!("before loop");
-
-    loop {
-        match listener.accept() {
-            Ok((_socket, addr)) => println!("new client: {addr:?}"),
-            Err(e) => println!("couldn't get client: {e:?}"),
-        }
-    }
-}
 
 fn decrypt_large_file(
-    encrypted_file_path: &str,
     output_path: &str,
     key: &[u8; 32],
     nonce: &[u8; 19],
 ) -> Result<(), anyhow::Error> {
-    // create listener and bind it to localhost port 7878
+    // create listener and bind it to localhost port 8081
     let listener = TcpListener::bind("localhost:8081").unwrap();
     let mut buffer = [0; BUFFER_SIZE];
 
@@ -60,38 +42,34 @@ fn decrypt_large_file(
     let aead = XChaCha20Poly1305::new(key.as_ref().into());
     let mut stream_decryptor = stream::DecryptorBE32::from_aead(aead, nonce.as_ref().into());
 
-    let mut buffer = [0u8; BUFFER_SIZE];
-
     // Use stream as source
     let mut output_file = File::create(output_path)?;
-
-    // test to see how many times to loop iterates
-    let mut test = 0;
-
 
     // listen for incoming connections
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
-        println!("looped");
-
+    
         // test to see how many times to loop iterates
-        test = test + 1;
+        println!("looped");
 
         // Read in buffer 
         let read_count = stream.read(&mut buffer).unwrap();
-        //println!("{}", String::from_utf8_lossy(&buffer));
 
+        // Shows the number of bytes read
         println!("{}", read_count);
 
         if read_count == BUFFER_SIZE { 
+            // If the buffer is full then expect more packets
             let plaintext = stream_decryptor
                 .decrypt_next(buffer.as_slice())
                 .map_err(|e| anyhow!("Decrypting large file 1: {}", e))?;
 
             output_file.write(&plaintext)?;
         } else if read_count == 0 {
+            // If there is no more data ... end
             break;
         } else {
+            // If the buffer is neither empty nor full then this is the last packet
             let plaintext = stream_decryptor
                 .decrypt_last(&buffer[..read_count])
                 .map_err(|e| anyhow!("Decrypting large 2: {}", e))?;
@@ -102,8 +80,6 @@ fn decrypt_large_file(
 
     }
 
-    // test to see how many times to loop iterates
-    println!("{}", test);
     Ok(())
 }
 
