@@ -10,6 +10,8 @@ use std::{
 };    
 use std::net::{TcpListener, TcpStream};
 
+const BUFFER_SIZE: usize = 1024;
+
 fn main() -> Result<(), anyhow::Error> {
     let mut key = [0u8; 32];
     let mut nonce = [0u8; 19];
@@ -41,7 +43,6 @@ fn encrypt_large_file(
 ) -> Result<(), anyhow::Error> {
 
     // Connect to the stream
-    let mut stream = TcpStream::connect("localhost:8081").unwrap();
 
     // Create message as bytes
     //let msg = b"short message";
@@ -51,7 +52,6 @@ fn encrypt_large_file(
     let aead = XChaCha20Poly1305::new(key.as_ref().into());
     let mut stream_encryptor = stream::EncryptorBE32::from_aead(aead, nonce.as_ref().into());
 
-    const BUFFER_SIZE: usize = 1024;
     let mut buffer = [0u8; BUFFER_SIZE];
 
     let mut source_file = File::open(source_file_path)?;
@@ -70,6 +70,7 @@ fn encrypt_large_file(
             //output_file.write(&ciphertext)?;
     
             //  Write message to the stream
+            let mut stream = TcpStream::connect("localhost:8081").unwrap();
             stream.write(&ciphertext).unwrap();
 
         } else {
@@ -80,6 +81,7 @@ fn encrypt_large_file(
             //output_file.write(&ciphertext)?;
 
             //  Write message to the stream
+            let mut stream = TcpStream::connect("localhost:8081").unwrap();
             stream.write(&ciphertext).unwrap();
 
             break;

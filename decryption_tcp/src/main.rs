@@ -10,6 +10,8 @@ use std::{
 };    
 use std::net::{TcpListener, TcpStream};
 
+const BUFFER_SIZE: usize = 1024 + 16;
+
 fn main() -> Result<(), anyhow::Error> {
     let mut key = [0u8; 32];
     let mut nonce = [0u8; 19];
@@ -25,11 +27,24 @@ fn main() -> Result<(), anyhow::Error> {
 
 
     decrypt_large_file(&encrypted_file_path, &output_file_path, &key, &nonce,)?;
+    //loops_twice();
 
 
     Ok(())
 }
 
+fn loops_twice() {
+    let listener = TcpListener::bind("localhost:8081").unwrap();
+
+    println!("before loop");
+
+    loop {
+        match listener.accept() {
+            Ok((_socket, addr)) => println!("new client: {addr:?}"),
+            Err(e) => println!("couldn't get client: {e:?}"),
+        }
+    }
+}
 
 fn decrypt_large_file(
     encrypted_file_path: &str,
@@ -45,11 +60,9 @@ fn decrypt_large_file(
     let aead = XChaCha20Poly1305::new(key.as_ref().into());
     let mut stream_decryptor = stream::DecryptorBE32::from_aead(aead, nonce.as_ref().into());
 
-    const BUFFER_SIZE: usize = 1024 + 16;
     let mut buffer = [0u8; BUFFER_SIZE];
 
     // Use stream as source
-    //let mut encrypted_file = File::open(encrypted_file_path)?;
     let mut output_file = File::create(output_path)?;
 
     // test to see how many times to loop iterates
@@ -59,6 +72,7 @@ fn decrypt_large_file(
     // listen for incoming connections
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
+        println!("looped");
 
         // test to see how many times to loop iterates
         test = test + 1;
@@ -67,7 +81,6 @@ fn decrypt_large_file(
         let read_count = stream.read(&mut buffer).unwrap();
         //println!("{}", String::from_utf8_lossy(&buffer));
 
-        //let read_count = encrypted_file.read(&mut buffer)?;
         println!("{}", read_count);
 
         if read_count == BUFFER_SIZE { 
