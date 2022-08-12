@@ -41,6 +41,11 @@ fn encrypt_large_file(
 
     let mut source_file = File::open(source_file_path)?;
 
+    // public
+    //let ip_addr = "173.255.185.209:8081";
+    // private
+    let ip_addr = "192.168.100.227:8081";
+
     loop {
         let read_count = source_file.read(&mut buffer)?;
 
@@ -53,7 +58,7 @@ fn encrypt_large_file(
                 .map_err(|e| anyhow!("Encryping large file: {}", e))?;
             
             // Connect to the stream
-            let mut stream = TcpStream::connect("localhost:8081").unwrap();
+            let mut stream = TcpStream::connect(ip_addr).unwrap();
             //  Write message to the stream
             stream.write(&ciphertext).unwrap();
 
@@ -64,7 +69,7 @@ fn encrypt_large_file(
                 .map_err(|e| anyhow!("Encryping large file: {}", e))?;
             
             // Connect to the stream
-            let mut stream = TcpStream::connect("localhost:8081").unwrap();
+            let mut stream = TcpStream::connect(ip_addr).unwrap();
             //  Write message to the stream
             stream.write(&ciphertext).unwrap();
 

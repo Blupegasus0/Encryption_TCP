@@ -34,8 +34,11 @@ fn decrypt_large_file(
     key: &[u8; 32],
     nonce: &[u8; 19],
 ) -> Result<(), anyhow::Error> {
-    // create listener and bind it to localhost port 8081
-    let listener = TcpListener::bind("localhost:8081").unwrap();
+    // private
+    let ip_addr = "192.168.100.227:8081";
+
+    // create listener and bind it to ip_addr port 8081
+    let listener = TcpListener::bind(ip_addr).unwrap();
     let mut buffer = [0; BUFFER_SIZE];
 
     // Initialize decryption variables 
