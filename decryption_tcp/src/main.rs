@@ -1,14 +1,14 @@
-use anyhow::anyhow;    
-use chacha20poly1305::{    
-    aead::{stream, Aead, NewAead},                                                                                                                                                            
-    XChaCha20Poly1305,    
-};    
-use rand::{Rng, RngCore, rngs::OsRng};    
-use std::{    
-    fs::{self, File},    
-    io::{Read, Write},    
-};    
+use anyhow::anyhow;
+use chacha20poly1305::{
+    aead::{stream, Aead, NewAead},
+    XChaCha20Poly1305,
+};
+use rand::{rngs::OsRng, Rng, RngCore};
 use std::net::{TcpListener, TcpStream};
+use std::{
+    fs::{self, File},
+    io::{Read, Write},
+};
 
 const BUFFER_SIZE: usize = 1024 + 16;
 
@@ -23,22 +23,32 @@ fn main() -> Result<(), anyhow::Error> {
 
     let output_file_path = "test.decrypt";
 
-    decrypt_large_file(&output_file_path, &key, &nonce,)?;
+    decrypt_large_file(&output_file_path, &key, &nonce)?;
 
     Ok(())
 }
-
 
 fn decrypt_large_file(
     output_path: &str,
     key: &[u8; 32],
     nonce: &[u8; 19],
 ) -> Result<(), anyhow::Error> {
-    // create listener and bind it to localhost port 8081
-    let listener = TcpListener::bind("localhost:8081").unwrap();
+    // private
+    //let socket = "192.168.100.227:8081";
+    // ipv6
+    //let socket = "[fe80::e122:f87:d8ca:7a84]:8081";
+    let mut socket = std::net::SocketAddrV6::new(
+        std::net::Ipv6Addr::new(0xfe80, 0, 0, 0, 0xe122, 0xf87, 0xd8ca, 0x7a84),
+        8080,
+        0,
+        0,
+    );
+
+    // create listener and bind it to ip_addr port 8081
+    let listener = TcpListener::bind(socket).unwrap();
     let mut buffer = [0; BUFFER_SIZE];
 
-    // Initialize decryption variables 
+    // Initialize decryption variables
     let aead = XChaCha20Poly1305::new(key.as_ref().into());
     let mut stream_decryptor = stream::DecryptorBE32::from_aead(aead, nonce.as_ref().into());
 
@@ -48,17 +58,17 @@ fn decrypt_large_file(
     // listen for incoming connections
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
-    
+
         // test to see how many times to loop iterates
         println!("looped");
 
-        // Read in buffer 
+        // Read in buffer
         let read_count = stream.read(&mut buffer).unwrap();
 
         // Shows the number of bytes read
         println!("{}", read_count);
 
-        if read_count == BUFFER_SIZE { 
+        if read_count == BUFFER_SIZE {
             // If the buffer is full then expect more packets
             let plaintext = stream_decryptor
                 .decrypt_next(buffer.as_slice())
@@ -77,10 +87,7 @@ fn decrypt_large_file(
             output_file.write(&plaintext)?;
             break;
         }
-
     }
 
     Ok(())
 }
-
-
